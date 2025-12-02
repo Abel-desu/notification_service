@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "976257179806",
+    "project_id": "entrance-zone",
+    "storage_bucket": "entrance-zone.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:976257179806:android:da2594ae026b4965ee9b8f",
+        "android_client_info": {
+          "package_name": "com.example.notification_test_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOgWxn2ksjdsCMCsKxbm4y10TTeF5ith8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,48 @@
+{
+  "name": "notification_service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "setup": "node setup.js",
+    "verify:firebase": "node scripts/verifyFirebase.js",
+    "test:fcm": "node scripts/testFCM.js",
+    "test:flow": "node scripts/testNotificationFlow.js",
+    "test:complete": "node scripts/testCompleteFlow.js",
+    "test:device": "node scripts/testWithDeviceToken.js",
+    "test:phone": "node scripts/getAndTestDeviceToken.js",
+    "get:token": "node scripts/getTokenDirectly.js",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:seed": "sequelize-cli db:seed:all",
+    "db:seed:undo": "sequelize-cli db:seed:undo:all",
+    "model:create": "sequelize-cli model:create",
+    "migration:create": "sequelize-cli migration:create"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "firebase-admin": "^13.6.0",
+    "helmet": "^8.1.0",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.15.3",
+    "node-cron": "^4.2.1",
+    "sequelize": "^6.37.7",
+    "socket.io": "^4.7.2",
+    "uuid": "^13.0.0",
+    "winston": "^3.18.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11",
+    "sequelize-cli": "^6.6.3"
+  }
+}
