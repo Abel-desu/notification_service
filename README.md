@@ -1,341 +1,284 @@
-# Notification Service
+# Notification Service ✨
 
-A comprehensive Express.js + MySQL + Sequelize notification service with Firebase Cloud Messaging (FCM) integration, JWT authentication, and role-based authorization.
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Sequelize](https://img.shields.io/badge/Sequelize-52B0E7?style=for-the-badge&logo=sequelize&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
 
-## Features
+A comprehensive, full-stack notification service featuring an Express.js backend with MySQL, Sequelize, JWT authentication, role-based authorization, Firebase Cloud Messaging (FCM) integration, cron jobs, and an event system. It is complemented by a multi-platform Flutter client application for seamless reception of notifications across iOS, Android, and Web platforms.
 
-- **Device Token Management**: Register and manage user device tokens for push notifications
-- **Notification System**: Send, receive, and manage notifications
-- **Firebase Cloud Messaging**: Send push notifications to iOS, Android, and Web devices
-- **JWT Authentication**: Secure API endpoints with JWT tokens
-- **Role-Based Authorization**: Admin and user roles with different permissions
-- **Cron Jobs**: Automated weekly summaries and daily reminders
-- **Event System**: Handle material added and exam published events
-- **Database**: MySQL with Sequelize ORM
-- **Logging**: Comprehensive logging with color-coded output
+## 🌟 Key Features
 
-## Project Structure
+-   **Device Token Management**: Robust system to register, update, and manage unique device tokens for targeted push notifications across various platforms (iOS, Android, Web).
+-   **Real-time Notification Delivery**: Leverages Firebase Cloud Messaging (FCM) to efficiently send push notifications, ensuring timely delivery to end-user devices.
+-   **Robust Authentication & Authorization**: Secure API endpoints using JSON Web Tokens (JWT) for authentication and implements fine-grained, role-based access control (Admin/User) for system functionalities.
+-   **Automated Scheduled Notifications**: Includes built-in cron jobs for sending recurring notifications such as daily reminders and weekly summaries, enhancing user engagement and information dissemination.
+-   **Event-Driven Notification System**: Triggers notifications dynamically based on specific system events (e.g., `examPublished`, `materialAdded`), allowing for responsive and context-aware communication.
+-   **Database Management**: Utilizes MySQL as the persistent storage layer, managed efficiently with the Sequelize ORM, storing users, device tokens, notifications, and delivery statuses.
+-   **Comprehensive Logging**: Integrated Winston Logger provides detailed, color-coded application and request logging, crucial for debugging, monitoring, and auditing system operations.
+-   **Admin Capabilities**: Dedicated controllers provide administrative functionalities for managing and broadcasting notifications effectively.
+-   **Socket.IO Integration**: (Inferred from project structure) Potential for real-time bidirectional communication, enabling interactive notifications or immediate updates.
 
+## 🛠️ Tech Stack
+
+-   **Backend**: Node.js, Express.js
+-   **Database**: MySQL, Sequelize ORM
+-   **Messaging**: Firebase Cloud Messaging (FCM)
+-   **Authentication**: JWT (JSON Web Tokens)
+-   **Frontend (Test App)**: Flutter, Dart
+-   **Mobile Platform Specifics**: Kotlin (Android), Swift (iOS)
+
+## ⚙️ Architecture
+
+```mermaid
+classDiagram
+    direction LR
+    class User {
+        + id: UUID
+        + email: String
+        + role: String (admin/user)
+    }
+    class DeviceToken {
+        + id: UUID
+        + userId: UUID
+        + token: String
+        + platform: String
+        + isActive: Boolean
+    }
+    class Notification {
+        + id: UUID
+        + title: String
+        + body: String
+        + type: String
+        + targetUser: UUID?
+        + scheduledAt: DateTime?
+        + sentAt: DateTime?
+    }
+    class NotificationDelivery {
+        + id: UUID
+        + notificationId: UUID
+        + deviceTokenId: UUID
+        + status: String (sent/failed/delivered)
+        + deliveredAt: DateTime?
+    }
+    class ExpressServer {
+        + start(): void
+    }
+    class API_Endpoints {
+        + POST /api/v1/auth/register
+        + POST /api/v1/device-tokens/register
+        + POST /api/v1/notifications/send
+        + GET /api/v1/notifications
+        + GET /api/v1/admin/notifications
+    }
+    class Controllers {
+        + handleDeviceTokenRequests()
+        + handleNotificationRequests()
+        + handleAdminRequests()
+    }
+    class Services {
+        + sendFCMNotification(token, payload)
+        + createNotification(data)
+        + manageDeviceToken(userId, token)
+    }
+    class Middleware {
+        + authenticate(req, res, next)
+        + authorize(roles)(req, res, next)
+    }
+    class CronJobs {
+        + dailyReminder()
+        + weeklySummary()
+    }
+    class EventHandlers {
+        + onExamPublished(data)
+        + onMaterialAdded(data)
+    }
+    class FCM {
+        + send(message)
+    }
+    class MySQL {
+        + connect()
+        + query()
+    }
+    class FlutterApp {
+        + registerDeviceToken()
+        + receiveNotification()
+    }
+
+    FlutterApp --|> API_Endpoints
+    API_Endpoints <.. ExpressServer
+    ExpressServer -- Controllers
+    Controllers -- Services
+    Services -- FCM
+    Services -- MySQL
+    Services -- Models
+
+    ExpressServer -- Middleware
+    Controllers .. Middleware
+
+    User "1" -- "0..*" DeviceToken : registers
+    DeviceToken "1" -- "0..*" NotificationDelivery : receives
+    Notification "1" -- "0..*" NotificationDelivery : has
+    NotificationDelivery --> User : for
+    NotificationDelivery --> DeviceToken : via
+
+    CronJobs --> Services : triggers
+    EventHandlers --> Services : triggers
+
+    Models <.. MySQL
+    Models ..> Services
+    Models <.. Controllers
 ```
-notification_service/
-├── config/
-│   └── firebase.js              # Firebase Admin SDK initialization
-├── models/
-│   ├── DeviceToken.js           # Device token schema
-│   ├── Notification.js          # Notification schema
-│   ├── User.js                  # User schema
-│   └── index.js                 # Model aggregator
-├── routes/
-│   ├── deviceToken.js           # Device token routes
-│   ├── notifications.js         # Notification routes
-│   └── index.js                 # Route aggregator
-├── controllers/
-│   ├── deviceTokenController.js # Device token logic
-│   ├── notificationController.js # Notification logic
-│   └── adminController.js       # Admin notification logic
-├── middleware/
-│   ├── auth.js                  # JWT authentication
-│   ├── authorization.js         # Role-based authorization
-│   └── errorHandler.js          # Error handling
-├── services/
-│   ├── fcmService.js            # FCM sending logic
-│   ├── notificationService.js   # Notification business logic
-│   └── tokenService.js          # Token management
-├── cron/
-│   ├── weeklySummary.js         # Weekly summary job
-│   ├── dailyReminder.js         # Daily exam reminder job
-│   └── index.js                 # Cron job aggregator
-├── events/
-│   ├── materialAdded.js         # New material event
-│   ├── examPublished.js         # New exam event
-│   └── index.js                 # Event aggregator
-├── utils/
-│   ├── logger.js                # Logging utility
-│   └── validators.js            # Input validation
-├── migrations/                  # Database migrations
-├── seeders/                     # Database seeders
-├── .env                         # Environment variables
-├── .env.example                 # Example env file
-├── app.js                       # Express app setup
-├── server.js                    # Server entry point
-├── package.json                 # Dependencies
-└── README.md                    # Documentation
-```
 
-## Installation
+## 🚀 Installation
+
+Follow these steps to get the Notification Service up and running on your local machine.
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
-- MySQL (v5.7 or higher)
-- npm or yarn
+Ensure you have the following installed:
 
-### Setup
+-   [Node.js](https://nodejs.org/en/) (v18 or higher)
+-   [npm](https://www.npmjs.com/) (comes with Node.js)
+-   [MySQL Server](https://dev.mysql.com/downloads/mysql/) (v8.0 or higher)
+-   A [Firebase Project](https://console.firebase.google.com/) with Cloud Messaging enabled.
+-   [Flutter SDK](https://flutter.dev/docs/get-started/install) (for the test application)
 
-1. **Clone the repository**
-   ```bash
-   cd notification_service
-   ```
+### Backend Setup
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/notification_service.git
+    cd notification_service
+    ```
 
-3. **Configure environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   Update `.env` with your configuration:
-   ```
-   DB_HOST=localhost
-   DB_USER=root
-   DB_PASSWORD=your_password
-   DB_NAME=notification_service
-   DB_PORT=3306
-   PORT=3000
-   NODE_ENV=development
-   JWT_SECRET=your_jwt_secret_key
-   JWT_EXPIRE=7d
-   ```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-4. **Create database**
-   ```bash
-   mysql -u root -p
-   CREATE DATABASE notification_service;
-   EXIT;
-   ```
+3.  **Environment Configuration:**
+    Create a `.env` file in the root directory by copying `.env.example` and fill in the necessary details:
+    ```ini
+    # Database Configuration
+    DB_HOST=localhost
+    DB_USER=root
+    DB_PASSWORD=your_mysql_password
+    DB_NAME=notification_service_db
+    DB_DIALECT=mysql
 
-5. **Run migrations**
-   ```bash
-   npm run db:migrate
-   ```
+    # JWT Configuration
+    JWT_SECRET=your_jwt_secret_key
+    JWT_EXPIRES_IN=1h
 
-6. **Start the server**
-   ```bash
-   npm run dev
-   ```
+    # Firebase Configuration
+    FCM_SERVICE_ACCOUNT_PATH=/path/to/your/firebase-service-account.json
 
-## API Endpoints
+    # Application Port
+    PORT=3000
+    ```
+    *Make sure to replace placeholder values with your actual credentials.*
 
-### Device Token Routes (`/api/device-tokens`)
+4.  **Firebase Service Account Key:**
+    Download your Firebase service account key (JSON file) from your Firebase project settings (Project settings -> Service accounts) and place it at the path specified in `FCM_SERVICE_ACCOUNT_PATH` in your `.env` file, e.g., `config/firebase-admin-sdk.json`.
 
-- **POST** `/register` - Register or update device token
-  ```json
-  {
-    "token": "device_token_here",
-    "deviceType": "ios|android|web",
-    "deviceName": "iPhone 12"
-  }
-  ```
+5.  **Database Migrations and Seeding:**
+    Set up your database tables and optionally seed them with initial data:
+    ```bash
+    npx sequelize db:create    # Create the database if it doesn't exist
+    npx sequelize db:migrate   # Run database migrations
+    npx sequelize db:seed:all  # (Optional) Seed the database with demo data
+    ```
 
-- **GET** `/` - Get all device tokens for user
+### Flutter Test Application Setup (`flutter_test_app`)
 
-- **DELETE** `/:tokenId` - Remove specific device token
+1.  **Navigate to the Flutter app directory:**
+    ```bash
+    cd flutter_test_app
+    ```
 
-- **POST** `/deactivate-all` - Deactivate all device tokens
+2.  **Get Flutter dependencies:**
+    ```bash
+    flutter pub get
+    ```
 
-### Notification Routes (`/api/notifications`)
+3.  **Firebase Configuration for Flutter:**
+    Follow the [official Firebase Flutter setup guide](https://firebase.google.com/docs/flutter/setup) to add your `google-services.json` (for Android) and `GoogleService-Info.plist` (for iOS) files to their respective platforms within `flutter_test_app`.
 
-- **POST** `/send` - Send notification
-  ```json
-  {
-    "title": "Notification Title",
-    "body": "Notification body",
-    "type": "exam|material|reminder|announcement|system",
-    "relatedId": "optional_id",
-    "relatedType": "exam|material|course",
-    "data": {}
-  }
-  ```
+## ▶️ Usage
 
-- **GET** `/` - Get user notifications
-  - Query params: `limit`, `offset`
+### Starting the Backend Server
 
-- **PATCH** `/:notificationId/read` - Mark notification as read
+From the `notification_service` root directory:
 
-- **DELETE** `/:notificationId` - Delete notification
-
-- **GET** `/unread/count` - Get unread notification count
-
-### Admin Routes (`/api/notifications/admin`)
-
-- **POST** `/bulk-send` - Send bulk notification (admin only)
-  ```json
-  {
-    "userIds": ["user_id_1", "user_id_2"],
-    "title": "Title",
-    "body": "Body",
-    "type": "announcement",
-    "data": {}
-  }
-  ```
-
-- **GET** `/stats/notifications` - Get notification statistics
-
-- **GET** `/stats/users` - Get user statistics
-
-- **GET** `/all` - Get all notifications (admin only)
-
-### Health Check
-
-- **GET** `/api/health` - Service health check
-
-## Authentication
-
-All endpoints (except health check) require JWT authentication. Include the token in the Authorization header:
-
-```
-Authorization: Bearer <your_jwt_token>
-```
-
-## Database Models
-
-### User
-- `id` (UUID, PK)
-- `email` (String, unique)
-- `firstName` (String)
-- `lastName` (String)
-- `role` (Enum: user, admin, moderator)
-- `isActive` (Boolean)
-- `notificationPreferences` (JSON)
-- `createdAt` (Date)
-- `updatedAt` (Date)
-
-### DeviceToken
-- `id` (UUID, PK)
-- `userId` (UUID, FK)
-- `token` (Text, unique)
-- `deviceType` (Enum: ios, android, web)
-- `deviceName` (String)
-- `isActive` (Boolean)
-- `lastUsedAt` (Date)
-- `createdAt` (Date)
-- `updatedAt` (Date)
-
-### Notification
-- `id` (UUID, PK)
-- `userId` (UUID, FK)
-- `title` (String)
-- `body` (Text)
-- `type` (Enum: exam, material, reminder, announcement, system)
-- `relatedId` (String)
-- `relatedType` (Enum: exam, material, course)
-- `isRead` (Boolean)
-- `isSent` (Boolean)
-- `sentAt` (Date)
-- `readAt` (Date)
-- `data` (JSON)
-- `createdAt` (Date)
-- `updatedAt` (Date)
-
-## Cron Jobs
-
-### Weekly Summary (Monday 9:00 AM)
-Sends a summary of notifications received during the week to all active users.
-
-### Daily Reminder (Every day 8:00 AM)
-Sends a reminder about unread notifications to users who have unread notifications.
-
-## Events
-
-### material:added
-Triggered when new material is added. Sends notification to all active users.
-
-### exam:published
-Triggered when new exam is published. Sends notification to all active users.
-
-## Logging
-
-The service uses a custom logger with color-coded output:
-- **ERROR** (Red): Error messages
-- **WARN** (Yellow): Warning messages
-- **INFO** (Cyan): Information messages
-- **DEBUG** (Magenta): Debug messages
-
-Set `LOG_LEVEL` in `.env` to control logging verbosity:
-- `error`: Only errors
-- `warn`: Errors and warnings
-- `info`: Errors, warnings, and info
-- `debug`: All messages (default)
-
-## Firebase Setup
-
-To enable Firebase Cloud Messaging:
-
-1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com)
-2. Generate a service account key
-3. Add the following to `.env`:
-   ```
-   FIREBASE_PROJECT_ID=your_project_id
-   FIREBASE_PRIVATE_KEY=your_private_key
-   FIREBASE_CLIENT_EMAIL=your_client_email
-   ```
-
-## Development
-
-### Run in development mode
 ```bash
-npm run dev
+npm start
+# Or, for development with nodemon (if installed globally)
+# npm run dev
 ```
 
-### Create a new model
+The server will start on `http://localhost:3000` (or your specified `PORT`).
+
+### Running the Flutter Test Application
+
+From the `flutter_test_app` directory:
+
 ```bash
-npm run model:create -- --name ModelName --attributes field1:string,field2:integer
+flutter run
 ```
 
-### Create a new migration
-```bash
-npm run migration:create -- --name migration_name
-```
+This will launch the Flutter application on your connected device or emulator, allowing you to register device tokens and receive test notifications.
 
-### Run migrations
-```bash
-npm run db:migrate
-```
+## 📚 API Reference
 
-### Undo migrations
-```bash
-npm run db:migrate:undo
-```
+All API endpoints are prefixed with `/api/v1`.
 
-## Error Handling
+### Authentication
 
-The service includes comprehensive error handling with:
-- Validation errors (400)
-- Authentication errors (401)
-- Authorization errors (403)
-- Not found errors (404)
-- Server errors (500)
+| Method | Endpoint               | Description              | Authentication |
+| :----- | :--------------------- | :----------------------- | :------------- |
+| `POST` | `/auth/register`       | Register a new user      | None           |
+| `POST` | `/auth/login`          | Authenticate user & get JWT | None           |
 
-All errors return a JSON response with `success: false` and a descriptive message.
+### Device Token Management (Requires JWT Token in `Authorization` header)
 
-## Best Practices
+| Method | Endpoint                       | Description                            | Authentication |
+| :----- | :----------------------------- | :------------------------------------- | :------------- |
+| `POST` | `/device-tokens/register`      | Register or update a user's device token | User / Admin   |
 
-1. Always include JWT token in Authorization header
-2. Validate input data before sending requests
-3. Use pagination for large datasets
-4. Handle errors gracefully on the client side
-5. Monitor logs for debugging issues
-6. Keep Firebase credentials secure in environment variables
+### Notifications (Requires JWT Token in `Authorization` header)
 
-## Troubleshooting
+| Method | Endpoint                        | Description                                  | Authentication |
+| :----- | :------------------------------ | :------------------------------------------- | :------------- |
+| `POST` | `/notifications/send`           | Send a notification (requires `admin` role)  | Admin          |
+| `GET`  | `/notifications`                | Get all notifications for the authenticated user | User / Admin   |
+| `PUT`  | `/notifications/:id/read`       | Mark a specific notification as read         | User / Admin   |
 
-### Database connection error
-- Ensure MySQL is running
-- Check database credentials in `.env`
-- Verify database exists
+### Admin Endpoints (Requires JWT Token and `admin` role)
 
-### Firebase not initialized
-- Check Firebase credentials in `.env`
-- Ensure service account key is valid
-- FCM features will be disabled if Firebase is not configured
+| Method | Endpoint                          | Description                               | Authentication |
+| :----- | :-------------------------------- | :---------------------------------------- | :------------- |
+| `GET`  | `/admin/notifications`            | Get all notifications in the system       | Admin          |
+| `DELETE`| `/admin/notifications/:id`       | Delete a specific notification            | Admin          |
 
-### Cron jobs not running
-- Ensure server is running
-- Check logs for cron job errors
-- Verify system time is correct
+## 👋 Contributing
 
-## License
+We welcome contributions to the Notification Service! Please follow these steps:
 
-ISC
+1.  Fork the repository.
+2.  Create a new branch (`git checkout -b feature/your-feature-name`).
+3.  Make your changes and ensure tests pass.
+4.  Commit your changes (`git commit -m 'feat: Add new feature'`).
+5.  Push to the branch (`git push origin feature/your-feature-name`).
+6.  Open a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+*This `README.md` was generated based on the project structure and provided context.*
